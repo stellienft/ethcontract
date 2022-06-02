@@ -2151,9 +2151,13 @@ contract MetisNinjas is ERC2981, ERC721Enumerable, Ownable, ReentrancyGuard, Acc
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _setDefaultRoyalty(artist, 100);
         _contractURI = "ipfs://QmTHujM7rXGrC6puZFEVx6LxLZZP78d7avpXYK2uyVuNFw";
+        initialMint();
+        }
+
+    function initialMint () private {
         uint256 newTokenId = _getNextTokenId();
-            _safeMint(msg.sender, newTokenId);
-            _incrementTokenId();
+        _safeMint(msg.sender, newTokenId);
+        _incrementTokenId();
     }
 
     function setBaseURI(string memory _setBaseURI) external onlyOwner {
@@ -2164,14 +2168,6 @@ contract MetisNinjas is ERC2981, ERC721Enumerable, Ownable, ReentrancyGuard, Acc
         _contractURI = uri;
     }
 
-    function withdraw() private  {
-        uint256 balance = address(this).balance;
-        uint256 treasuryAmt = balance.mul(75).div(100);
-        uint256 artistAmt = balance.mul(25).div(100);
-        require(treasuryAmt.add(artistAmt) == balance);
-        payable(treasury).transfer(treasuryAmt);
-        payable(artist).transfer(artistAmt);
-    }
 
     // PUBLIC
     
@@ -2188,10 +2184,6 @@ contract MetisNinjas is ERC2981, ERC721Enumerable, Ownable, ReentrancyGuard, Acc
         return super.supportsInterface(interfaceId);
     }
 
-    // function totalSupply() public view returns (uint256) {
-    //     return _currentTokenId;
-    // }
-
     function _baseURI() internal view virtual override returns (string memory) {
         return baseTokenURI;
     }
@@ -2200,7 +2192,6 @@ contract MetisNinjas is ERC2981, ERC721Enumerable, Ownable, ReentrancyGuard, Acc
         return _contractURI;
     }
 
-    
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
 
@@ -2225,15 +2216,18 @@ contract MetisNinjas is ERC2981, ERC721Enumerable, Ownable, ReentrancyGuard, Acc
      */
     function purchase(uint256 count) public payable nonReentrant {
 
-        uint256 price = 2.00 ether;
+        uint256 price;
 
+        if (count < 3) { // 3
+            price = 2 ether; // 2
+        }
         if (count >= 3 && count < 5) {
-            price = 1.7 ether;
+            price = 1.7 ether; // 1.7
         }
         if (count >= 5 && count < 10) {
-            price = 1.5 ether;
+            price = 1.5 ether; // 1.5
         }
-        if (count >= 10) {
+        else {
             price = 1.2 ether;
         }
 
@@ -2248,8 +2242,6 @@ contract MetisNinjas is ERC2981, ERC721Enumerable, Ownable, ReentrancyGuard, Acc
             _safeMint(msg.sender, newTokenId);
             _incrementTokenId();
         }
-        
-        withdraw();
     }
 
     // PRIVATE
@@ -2283,5 +2275,15 @@ contract MetisNinjas is ERC2981, ERC721Enumerable, Ownable, ReentrancyGuard, Acc
     function _incrementTokenId() private {
         _currentTokenId++;
     }
+
+function withdraw() public onlyOwner  {
+        uint256 balance = address(this).balance;
+        uint256 treasuryAmt = balance.mul(75).div(100);
+        uint256 artistAmt = balance.sub(treasuryAmt);
+        require(treasuryAmt.add(artistAmt) == balance);
+        payable(treasury).transfer(treasuryAmt);
+        payable(artist).transfer(artistAmt);
+    }
 }
+
 
